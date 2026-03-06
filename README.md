@@ -23,8 +23,8 @@ With additional fingerprinting data, this framework could become a highly effici
 ## Installation
 
 ```bash
-git clone https://github.com/nsm-barii/xp.git
-cd xp/src
+git clone https://github.com/nsm-barii/vader.git
+cd vader/src
 python3 -m venv venv
 source venv/bin/activate
 pip install -r requiremenets.txt
