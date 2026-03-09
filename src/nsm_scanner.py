@@ -24,7 +24,6 @@ from nsm_database import File_Saver, Database
 
 console = Console()
 LOCK = threading.Lock()
-bf = BloomFilter(capacity=100000000, error_rate=0.001)
 
 
 class Mass_IP_Scanner():
@@ -49,6 +48,63 @@ class Mass_IP_Scanner():
     database = False
 
 
+    # IPS
+    #total_ips        = 0 
+    total_blocks     = []
+    ips_from_block   = 0
+    current_block    = False
+    blocks_done      = 0
+    bf_all = BloomFilter(capacity=100000000, error_rate=0.001)
+
+
+
+    @classmethod
+    def _track_ip_blocks(cls):
+        """Return a random IP from the current block"""
+
+        try:
+
+            if not hasattr(cls, "bf") or cls.bf is None: 
+                cls.bf = BloomFilter(capacity=100000000, error_rate=0.001)
+                cls.total_blocks = cls.blocks.copy()
+
+
+            if cls.ips_from_block <= 0:
+                
+                if not cls.blocks:
+                    if cls.scan: console.print(f"[bold green][+] Scan complete | Total IPv4s:[/bold green] {cls.scanned_ips} | Blocks: {len(cls.total_blocks)}")
+                    cls.scan = False; return False
+                    
+
+                cls.current_block = cls.blocks.pop(0)
+
+                network = ipaddress.IPv4Network(cls.current_block)
+                cls.ips_from_block = network.num_addresses
+
+                cls.bf = BloomFilter(capacity=100000000, error_rate=0.001)
+
+                console.print(f"\n[bold green][*] Current IPv4 Block:[yellow] {cls.current_block}  -  IPv4 Addresses: {ipaddress.IPv4Network(cls.current_block).num_addresses}\n")                
+                time.sleep(1)
+
+                return False
+
+
+            network = ipaddress.IPv4Network(cls.current_block)
+
+            random_ip = ipaddress.IPv4Address(random.randint(int(network.network_address), int(network.broadcast_address)))
+
+
+            if random_ip in cls.bf: return False
+
+            cls.bf.add(random_ip)
+            cls.ips_from_block -= 1; cls.scanned_ips += 1
+
+            return str(random_ip)
+
+        except Exception as e:
+            console.print(f"[bold red]IP Exception:[/bold red] {e}")
+            return False
+
 
     @classmethod
     def _generate_random_ip(cls, verbose=False):
@@ -61,9 +117,19 @@ class Mass_IP_Scanner():
             # I USUALLY DONT USE COMMENTS SINCE THERE FOR SKIDS
             # BUT THIS WAS EXTREMELY COMPLEX CODE TO DESIGN/DEBUG
             if cls.country:
+
                 
-                networks = [ipaddress.IPv4Network(str(block)) for block in cls.blocks]
-                network = random.choice(networks)
+                with LOCK:
+                    return Mass_IP_Scanner._track_ip_blocks()
+
+
+                
+                """
+
+                // THE METHOD BELOW IS NOW DEAPPRECIATED, WILL BE KEEPING FOR DOCUMENTATION
+
+                network = [ipaddress.IPv4Network(str(block)) for block in cls.current_block]
+                network = random.choice(network)
 
                 # PICK A RANDOM NUMBER BETWEEN THE NETWORKS START AND END IP (AS INTEGERS) 
                 # EXAMPLE --> 122.X.X.122  //  122 == START / 122 == END
@@ -71,23 +137,26 @@ class Mass_IP_Scanner():
 
                 # CONVERT THAT INTEGER BACK INTO A NORMAL X.X.X.X IPV4 ADDRESS
                 random_ip     = ipaddress.IPv4Address(random_ip_int)
+                
+                """
                  
 
-            else: random_ip = (f"{random.randint(0,255)}.{random.randint(0,255)}.{random.randint(0,255)}.{random.randint(0,255)}")
+            else: 
 
-            if random_ip in bf: return False
-            bf.add(random_ip); cls.scanned_ips += 1
+                random_ip = (f"{random.randint(0,255)}.{random.randint(0,255)}.{random.randint(0,255)}.{random.randint(0,255)}")
 
-            if verbose: console.print(f"[bold green]Generated IP:[bold yellow] {random_ip}")
+                if random_ip in cls.bf_all: return False
+                cls.bf_all.add(random_ip); cls.scanned_ips += 1
 
-            return str(random_ip)
+                if verbose: console.print(f"[bold green]Generated IP:[bold yellow] {random_ip}")
+
+                return str(random_ip)
 
 
 
         except Exception as e: print(e); return False
-
-    
-    
+ 
+  
     @classmethod
     def _random_ip_validator(cls, ports, timeout=3, verbose=False):
         """This will validate random ip"""
@@ -101,9 +170,9 @@ class Mass_IP_Scanner():
         c4 = "bold green"
 
         
+        if not cls.scan: return False
         ip = Mass_IP_Scanner._generate_random_ip(verbose=False)
         if not ip: return
-        if not cls.scan: return False
 
 
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
@@ -203,19 +272,17 @@ class Mass_IP_Scanner():
         if cls.save:    File_Saver.push_ips_found(data=False, CONSOLE=console)
         if cls.asn:     data, cls.blocks = Database.get_asn(country=cls.country, asns=cls.asn)
 
+        Database.get_total_ips(blocks=cls.blocks)
 
         if not port:
             port = console.input("\n[bold yellow]Enter port to mass scan for!: ") or 80
             threads = console.input("[bold yellow]Enter Thread count!: ") or 250; print('\n')
         
 
-        #t = 3
-        #while t > 0:
-            #print(f'[*] Starting in: {t}', end="\r", flush=True); t -= 1
-            #time.sleep(1)
-        
+
         time.sleep(2)
         Mass_IP_Scanner._ip_threader(ports=port, max_workers=threads or 250)
+
 
 
 if __name__ =="__main__":

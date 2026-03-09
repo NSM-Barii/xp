@@ -834,10 +834,11 @@ class Database():
                             f"\n[{c4}][+] handle:[{c6}] {handle}"
                             f"\n[{c4}][+] prefix(s):[{c5}] {'\n   '.join(block)}"
                             f"\n[{c1}]{"=" * 25}"
-                            )
+                        )
             
 
-            CONSOLE.print(f"\n\n[{c1}][+] Total IP Blocks:[{c6}] {len(total_blocks)}"); return base, total_blocks
+            #CONSOLE.print(f"\n\n[{c1}][+] Total IP Blocks:[{c6}] {len(total_blocks)}")
+            return base, total_blocks
     
         
         except Exception as e: CONSOLE.print(f"[bold red][-] Exception Error:[bold yellow] {e}")
@@ -1031,8 +1032,23 @@ class Database():
             if Database.paths: Database._check_paths(ip=ip, port=port, CONSOLE=CONSOLE)
 
 
+    @classmethod
+    def get_total_ips(cls, blocks):
+        """This will be for getting total ip in ip block(s)"""
 
 
+        #blocks = Database.get_ip_block(country=country)
+        total = 0
+
+
+        for block in blocks:
+            network = ipaddress.IPv4Network(block)
+            total += network.num_addresses
+        
+
+        
+        console.print(f"[bold red][*] Total IPv4 Blocks:[/bold red] {len(blocks)}")
+        console.print(f"[bold red][*] Total IPv4 Addresses:[/bold red] {total}")
 
 
 
@@ -1154,9 +1170,14 @@ class Deappreciated():
 
 if __name__ == "__main__":
 
-    t = 2
+    t = 11
 
     if t == 0: pass
+
+
+    elif t == 11:
+
+        Database._get_total_ips()
 
 
     elif t == 1:
