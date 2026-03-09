@@ -60,7 +60,7 @@ class Mass_IP_Scanner():
 
     @classmethod
     def _track_ip_blocks(cls):
-        """Return a random IP from the current block"""
+        """Return a random IP from the current block  """
 
         try:
 
