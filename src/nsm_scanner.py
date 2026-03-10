@@ -236,27 +236,26 @@ class Mass_IP_Scanner():
 
                 try:
 
-                    # Submit initial batch
-                    futures = {executor.submit(Mass_IP_Scanner._random_ip_validator, portz, timeout) for _ in range(max_workers)}
+                    while cls.scan:
 
-                    # Process futures continuously
-                    for future in as_completed(futures):
-                        if not cls.scan:
-                            break
+                        # Submit batch of futures
+                        batch = [executor.submit(Mass_IP_Scanner._random_ip_validator, portz, timeout) for _ in range(max_workers)]
 
-                        # Submit new future to replace completed one
-                        futures.add(executor.submit(Mass_IP_Scanner._random_ip_validator, portz, timeout))
+                        # Process as they complete
+                        for future in as_completed(batch):
+                            if not cls.scan:
+                                break
 
-                        # Update display
-                        if Database.country:  panel.renderable = (f"[{c1}]Filter: [{c2}]{Database.country}  -  [{c1}]Active IPs: [{c2}]{cls.online_ips} / {cls.scanned_ips}  -  [{c1}]Port(s): [{c2}]{portz}  -  [{c1}]Max Workers:[{c2}] {max_workers}  -  [{c1}]Errors:[{c2}] {Database.errors}  -  Developed by NSM Barii")
-                        else: panel.renderable = (f"[{c1}]Active IPs: [{c2}]{cls.online_ips} / {cls.scanned_ips}  -  [{c1}]Port(s): [{c2}]{portz}  -  [{c1}]Max Workers:[{c2}] {max_workers}  -  [{c1}]Errors:[{c2}] {Database.errors}  -  Developed by NSM Barii")
+                            # Update display
+                            if Database.country:  panel.renderable = (f"[{c1}]Filter: [{c2}]{Database.country}  -  [{c1}]Active IPs: [{c2}]{cls.online_ips} / {cls.scanned_ips}  -  [{c1}]Port(s): [{c2}]{portz}  -  [{c1}]Max Workers:[{c2}] {max_workers}  -  [{c1}]Errors:[{c2}] {Database.errors}  -  Developed by NSM Barii")
+                            else: panel.renderable = (f"[{c1}]Active IPs: [{c2}]{cls.online_ips} / {cls.scanned_ips}  -  [{c1}]Port(s): [{c2}]{portz}  -  [{c1}]Max Workers:[{c2}] {max_workers}  -  [{c1}]Errors:[{c2}] {Database.errors}  -  Developed by NSM Barii")
 
-                        # Save IPs periodically
-                        if time.time() - last_save > 5 and cls.save:
-                            with LOCK:
-                                File_Saver.push_ips_found(data=cls.current_ips, CONSOLE=console, verbose=False)
-                                last_save = time.time()
-                                cls.current_ips = []
+                            # Save IPs periodically
+                            if time.time() - last_save > 5 and cls.save:
+                                with LOCK:
+                                    File_Saver.push_ips_found(data=cls.current_ips, CONSOLE=console, verbose=False)
+                                    last_save = time.time()
+                                    cls.current_ips = []
 
                     sys.exit()
 
