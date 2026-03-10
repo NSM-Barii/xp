@@ -236,14 +236,20 @@ class Mass_IP_Scanner():
 
                 try:
 
+                    # Submit initial batch
+                    futures = {executor.submit(Mass_IP_Scanner._random_ip_validator, portz, timeout) for _ in range(max_workers)}
+
                     while cls.scan:
 
-                        # Submit futures and process as they complete
-                        futures = {executor.submit(Mass_IP_Scanner._random_ip_validator, portz, timeout) for _ in range(max_workers)}
-
+                        # Process completed futures and submit new ones
                         for future in as_completed(futures):
+                            futures.discard(future)
+
                             if not cls.scan:
                                 break
+
+                            # Submit new future to replace completed one
+                            futures.add(executor.submit(Mass_IP_Scanner._random_ip_validator, portz, timeout))
 
                             # Update display
                             if Database.country:  panel.renderable = (f"[{c1}]Filter: [{c2}]{Database.country}  -  [{c1}]Active IPs: [{c2}]{cls.online_ips} / {cls.scanned_ips}  -  [{c1}]Port(s): [{c2}]{portz}  -  [{c1}]Max Workers:[{c2}] {max_workers}  -  [{c1}]Errors:[{c2}] {Database.errors}  -  Developed by NSM Barii")
@@ -255,6 +261,8 @@ class Mass_IP_Scanner():
                                     File_Saver.push_ips_found(data=cls.current_ips, CONSOLE=console, verbose=False)
                                     last_save = time.time()
                                     cls.current_ips = []
+
+                            break  # Exit as_completed to recheck cls.scan
 
                     sys.exit()
 
