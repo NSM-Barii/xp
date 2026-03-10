@@ -322,8 +322,8 @@ class Mass_IP_Scanner():
         panel = Panel(renderable="[bold red]Mass IP Scanner", border_style="bold purple", expand=False)
         with Live(panel, console=console, refresh_per_second=4):
             while True:
-                Mass_IP_Scanner._ip_threader(ports=port, max_workers=threads or 250, panel=panel)
                 cls.scan = True; cls.last_scan   = 0
+                Mass_IP_Scanner._ip_threader(ports=port, max_workers=threads or 250, panel=panel)
 
 
 
