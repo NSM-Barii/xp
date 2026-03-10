@@ -221,7 +221,7 @@ class Mass_IP_Scanner():
 
 
         futures = []
-        last_save = time.time()
+        count = 0
         panel = Panel(renderable="[bold red]Mass IP Scanner", border_style="bold purple", expand=False)
 
 
@@ -242,6 +242,7 @@ class Mass_IP_Scanner():
 
                         
                         while len(futures) < max_workers and cls.scan:
+                            count += 1
                             futures.append(executor.submit(Mass_IP_Scanner._random_ip_validator, portz, timeout))
 
 
@@ -259,7 +260,7 @@ class Mass_IP_Scanner():
                                 cls.current_ips = []
 
                         # Reinit every 100k to prevent hanging
-                        if cls.scanned_ips > 0 and cls.scanned_ips % 100000 == 0:
+                        if cls.scanned_ips > 0 and count > 100000:
                             console.print(f"\n[bold yellow][!] Reinitializing at {cls.scanned_ips} IPs...")
                             cls.scan = False
                             time.sleep(5)
