@@ -16,7 +16,7 @@ from scapy.all import IP, TCP, sr1
 
 
 # ETC IMPORTS
-import time, random, threading, sys; from pybloom_live import BloomFilter
+import time, random, threading, sys, concurrent.futures; from pybloom_live import BloomFilter
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 
@@ -227,36 +227,41 @@ class Mass_IP_Scanner():
         except Exception: max_workers = 250
 
         try: portz  = [int(port) for port in ports.split(',')]
-        except Exception: portz = list(ports)      
+        except Exception: portz = list(ports)
 
 
-        
+
         with Live(panel, console=console, refresh_per_second=4):
             with ThreadPoolExecutor(max_workers=max_workers) as executor:
 
                 try:
-                
-                    while cls.scan:
 
-                        while len(futures) < max_workers: 
+                    # Submit initial batch of futures
+                    for _ in range(max_workers):
+                        future = executor.submit(Mass_IP_Scanner._random_ip_validator, portz, timeout)
+                        futures.add(future)
 
-                            future = executor.submit(Mass_IP_Scanner._random_ip_validator, portz, timeout)
-                            futures.add(future)
+                    while cls.scan and futures:
 
-                            if Database.country:  panel.renderable = (f"[{c1}]Filter: [{c2}]{Database.country}  -  [{c1}]Active IPs: [{c2}]{cls.online_ips} / {cls.scanned_ips}  -  [{c1}]Port(s): [{c2}]{portz}  -  [{c1}]Max Workers:[{c2}] {max_workers}  -  [{c1}]Errors:[{c2}] {Database.errors}  -  Developed by NSM Barii")
-                            else: panel.renderable = (f"[{c1}]Active IPs: [{c2}]{cls.online_ips} / {cls.scanned_ips}  -  [{c1}]Port(s): [{c2}]{portz}  -  [{c1}]Max Workers:[{c2}] {max_workers}  -  [{c1}]Errors:[{c2}] {Database.errors}  -  Developed by NSM Barii")
-                            
-                        
+                        # Wait for at least one future to complete
+                        done, futures = concurrent.futures.wait(futures, return_when=concurrent.futures.FIRST_COMPLETED)
+
+                        # Submit new futures to replace completed ones
+                        for _ in range(len(done)):
+                            if cls.scan:
+                                future = executor.submit(Mass_IP_Scanner._random_ip_validator, portz, timeout)
+                                futures.add(future)
+
+                        # Update display
+                        if Database.country:  panel.renderable = (f"[{c1}]Filter: [{c2}]{Database.country}  -  [{c1}]Active IPs: [{c2}]{cls.online_ips} / {cls.scanned_ips}  -  [{c1}]Port(s): [{c2}]{portz}  -  [{c1}]Max Workers:[{c2}] {max_workers}  -  [{c1}]Errors:[{c2}] {Database.errors}  -  Developed by NSM Barii")
+                        else: panel.renderable = (f"[{c1}]Active IPs: [{c2}]{cls.online_ips} / {cls.scanned_ips}  -  [{c1}]Port(s): [{c2}]{portz}  -  [{c1}]Max Workers:[{c2}] {max_workers}  -  [{c1}]Errors:[{c2}] {Database.errors}  -  Developed by NSM Barii")
+
+                        # Save IPs periodically
                         with LOCK:
                             if time.time() - last_save > 5 and cls.save:
                                 File_Saver.push_ips_found(data=cls.current_ips, CONSOLE=console, verbose=False)
                                 last_save = time.time()
                                 cls.current_ips = []
-   
-
-                        futures = {f for f in futures if not f.done()}
-                        #futures -= done
-                    
 
                     sys.exit()
 
