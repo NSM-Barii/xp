@@ -95,11 +95,11 @@ class Mass_IP_Scanner():
 
             random_ip = ipaddress.IPv4Address(random.randint(int(network.network_address), int(network.broadcast_address)))
 
-            cls.last_scan += 1
             if random_ip in cls.bf: return False
-            
+
             cls.bf.add(random_ip)
             cls.ips_from_block -= 1; cls.scanned_ips += 1
+            cls.last_scan += 1
 
             return str(random_ip)
 
@@ -256,7 +256,7 @@ class Mass_IP_Scanner():
                             last_save = time.time()
                             cls.current_ips = []
 
-                    if cls.scanned_ips > 0 and cls.last_scan > 300000:
+                    if cls.scanned_ips > 0 and cls.last_scan > 250000:
                         console.print(f"\n[bold yellow][!] Reinitializing ThreadPool!")
                         cls.scan = False
                         time.sleep(5)
