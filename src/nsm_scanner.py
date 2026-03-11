@@ -354,7 +354,7 @@ class Mass_IP_Scanner():
     # IPS
     #total_ips        = 0
     total_blocks     = []
-    ips_from_block   = 0
+    ips_from_block   = []
     current_block    = False
     blocks_done      = 0
     bf_all = None
