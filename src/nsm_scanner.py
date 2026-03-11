@@ -367,22 +367,15 @@ class Mass_IP_Scanner():
 
         try:
 
-            if not hasattr(cls, "bf") or cls.bf is None:
-                network = ipaddress.IPv4Network(cls.blocks[0])
-                cls.bf = BloomFilter(capacity=network.num_addresses * 2, error_rate=0.001)
-                cls.total_blocks = cls.blocks.copy()
 
-
-            if cls.ips_from_block <= 0:
+            if len(cls.ips_from_block) <= 0:
 
                 if not cls.blocks:
                     if cls.scan: console.print(f"[bold green][+] Scan complete | Total IPv4s:[/bold green] {cls.scanned_ips} | Blocks: {len(cls.total_blocks)}")
                     cls.scan = False; return False
+ 
 
-
-                cls.current_block = cls.blocks.pop(0)
-
-                network = ipaddress.IPv4Network(cls.current_block)
+                network = ipaddress.IPv4Network(cls.blocks.pop(0))
                 cls.ips_from_block = network.num_addresses
                 cls.total_ips = [ip for ip in network]
 
@@ -392,7 +385,7 @@ class Mass_IP_Scanner():
 
             random_ip = cls.total_ips.pop(0)
 
-            cls.ips_from_block -= 1; cls.scanned_ips += 1; cls.last_scan += 1
+            cls.scanned_ips += 1; cls.last_scan += 1
 
             return str(random_ip)
 
