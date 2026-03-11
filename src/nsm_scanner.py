@@ -352,7 +352,7 @@ class Mass_IP_Scanner():
 
 
     # IPS
-    #total_ips        = 0
+    total_ips        = None
     total_blocks     = []
     ips_from_block   = []
     current_block    = False
@@ -368,22 +368,25 @@ class Mass_IP_Scanner():
         try:
 
 
-            if len(cls.ips_from_block) <= 0:
+            if not cls.total_ips or len(cls.total_ips) == 0:
+
 
                 if not cls.blocks:
                     if cls.scan: console.print(f"[bold green][+] Scan complete | Total IPv4s:[/bold green] {cls.scanned_ips} | Blocks: {len(cls.total_blocks)}")
                     cls.scan = False; return False
- 
 
-                network = ipaddress.IPv4Network(cls.blocks.pop(0))
+
+                cls.current_block = cls.blocks.pop(0)
+                network = ipaddress.IPv4Network(cls.current_block)
                 cls.ips_from_block = network.num_addresses
                 cls.total_ips = [ip for ip in network]
 
-                console.print(f"\n[bold green][*] Current IPv4 Block:[yellow] {cls.current_block}  -  IPv4 Addresses: {ipaddress.IPv4Network(cls.current_block).num_addresses}\n")                
+                console.print(f"\n[bold green][*] Current IPv4 Block:[yellow] {cls.current_block}  -  IPv4 Addresses: {network.num_addresses}\n")
                 time.sleep(1)
 
 
             random_ip = cls.total_ips.pop(0)
+            cls.ips_from_block -= 1
 
             cls.scanned_ips += 1; cls.last_scan += 1
 
