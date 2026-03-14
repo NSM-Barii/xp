@@ -382,10 +382,10 @@ class Mass_IP_Scanner():
                         c1 = "red"; c2 = "bold green"; c3 = "bold blue"; c4 = "bold yellow"
 
                         stats = (
-                            f"\n[{c1}] [+] Total online IPv4s:[{c4}] {cls.online_ips}"
-                            f"\n[{c1}] [+] Total Blocks scanned:[{c4}] {len(cls.total_blocks)}"
-                            f"\n[{c1}] [+] Total IPv4s scanned:[{c4}] {cls.total_ips}"
-                            f"\n[{c1}] [+] Elapsed Time:[{c4}] {time_total}"
+                            f"[{c3}] [+] Total online IPv4s:[{c4}] {cls.online_ips}"
+                            f"\n[{c3}] [+] Total Blocks scanned:[{c4}] {len(cls.total_blocks)}"
+                            f"\n[{c3}] [+] Total IPv4s scanned:[{c4}] {cls.total_ips}"
+                            f"\n[{c3}] [+] Elapsed Time:[{c4}] {time_total}"
                         )
 
                         
