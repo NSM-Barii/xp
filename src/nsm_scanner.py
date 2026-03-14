@@ -592,7 +592,7 @@ class Mass_IP_Scanner():
             port = console.input("\n[bold yellow]Enter port to mass scan for!: ") or 80
             threads = console.input("[bold yellow]Enter Thread count!: ") or 250; print('\n')
         
-        time.sleep(3)
+        
         panel = Panel(renderable="[bold red]Mass IP Scanner", border_style="bold purple", expand=False)
         with Live(panel, console=console, refresh_per_second=4):
             while True:

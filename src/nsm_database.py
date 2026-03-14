@@ -1099,7 +1099,7 @@ class File_Saver():
     
         try:
             with LOCK:
-                clean = "\n".join(data) 
+                clean = "\n".join(data) + "\n"
 
 
             with open(str(cls.path), "a") as file: file.write(clean)
