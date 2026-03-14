@@ -198,7 +198,6 @@ class Mass_IP_Scanner_old():
                         with LOCK:
                             if cls.save and ip not in cls.saved_ips_set:
                                 cls.current_ips.append(ip)
-                                cls.saved_ips_set.add(ip)
                             cls.online_ips += 1
 
                         Database.main(ip=ip, port=port, CONSOLE=console)
@@ -252,7 +251,7 @@ class Mass_IP_Scanner_old():
                     else: panel.renderable = (f"[{c1}]Active IPs: [{c2}]{cls.online_ips} / {cls.scanned_ips}  -  [{c1}]Port(s): [{c2}]{portz}  -  [{c1}]Max Workers:[{c2}] {max_workers}  -  [{c1}]Errors:[{c2}] {Database.errors}  -  Developed by NSM Barii")
 
 
-                    if time.time() - last_save > 5 and cls.save:
+                    if time.time() - last_save > 5 and cls.save and cls.current_ips:
                         with LOCK:
                             File_Saver.push_ips_found(data=cls.current_ips, CONSOLE=console, verbose=False)
                             last_save = time.time()
@@ -355,13 +354,12 @@ class Mass_IP_Scanner():
 
 
     # IPS  // THESE ARE USED BY cls._track_ip_blocks() and cls._generate_random_ip()
-    total_ips        = None
-    total_blocks     = []
-    ips_from_block   = []
+    ips_from_block   = None
     current_block    = False
-    blocks_done      = 0
     bf_all = None
-    saved_ips_set = set()
+    total_ips        = None
+    # cls.total_blocks is set in the _main() method
+
 
 
 
@@ -372,25 +370,43 @@ class Mass_IP_Scanner():
         try:
 
 
-            if not cls.total_ips or len(cls.total_ips) == 0:
+            if not cls.ips_from_block or len(cls.ips_from_block) == 0:
 
 
                 if not cls.blocks:
-                    if cls.scan: console.print(f"[bold green][+] Scan complete | Total IPv4s:[/bold green] {cls.scanned_ips} | Blocks: {len(cls.total_blocks)}")
+
+                    time_total = time.time() - cls.time_start
+                    
+                    if cls.scan: 
+
+                        c1 = "red"; c2 = "bold green"; c3 = "bold blue"; c4 = "bold yellow"
+
+                        stats = (
+                            f"\n[{c1}] [+] Total online IPv4s:[{c4}] {cls.online_ips}"
+                            f"\n[{c1}] [+] Total Blocks scanned:[{c4}] {len(cls.total_blocks)}"
+                            f"\n[{c1}] [+] Total IPv4s scanned:[{c4}] {len(cls.total_ips)}"
+                            f"\n[{c1}] [+] Elapsed Time:[{c4}] {time_total}"
+                        )
+
+                        
+                        console.print(
+                            f"[{c1}]=========   Results   =========\n",
+                            stats,
+                            f"\n[{c1}]=================================",
+                        )
+
                     cls.scan = False; return False
 
 
                 cls.current_block = cls.blocks.pop(0)
-                network = ipaddress.IPv4Network(cls.current_block)
-                cls.ips_from_block = network.num_addresses
-                cls.total_ips = [ip for ip in network]
+                network = ipaddress.IPv4Network(cls.current_block); cls.total_ips += network.num_addresses
+                cls.ips_from_block = [ip for ip in network]
 
                 console.print(f"\n[bold green][*] Current IPv4 Block:[yellow] {cls.current_block}  -  IPv4 Addresses: {network.num_addresses}\n")
                 time.sleep(1)
 
 
-            random_ip = cls.total_ips.pop(0)
-            cls.ips_from_block -= 1
+            random_ip = cls.ips_from_block.pop(0)
 
             cls.scanned_ips += 1; cls.last_scan += 1
 
@@ -489,9 +505,8 @@ class Mass_IP_Scanner():
                     if result == 0: #and result.haslayer(TCP) and result[TCP].flags == 0x12:
 
                         with LOCK:
-                            if cls.save and ip not in cls.saved_ips_set:
+                            if cls.save and ip not in cls.current_ips:
                                 cls.current_ips.append(ip)
-                                cls.saved_ips_set.add(ip)
                             cls.online_ips += 1
 
                         Database.main(ip=ip, port=port, CONSOLE=console)
@@ -545,14 +560,14 @@ class Mass_IP_Scanner():
                     else: panel.renderable = (f"[{c1}]Active IPs: [{c2}]{cls.online_ips} / {cls.scanned_ips}  -  [{c1}]Port(s): [{c2}]{portz}  -  [{c1}]Max Workers:[{c2}] {max_workers}  -  [{c1}]Errors:[{c2}] {Database.errors}  -  Developed by NSM Barii")
 
 
-                    if time.time() - last_save > 5 and cls.save:
+                    if time.time() - last_save > 5 and cls.save and cls.current_ips:
                         with LOCK:
-                            File_Saver.push_ips_found(data=cls.current_ips, CONSOLE=console, save_name=cls.save_name, verbose=False)
+                            File_Saver.push_ips_found(data=cls.current_ips, CONSOLE=console, verbose=False)
                             last_save = time.time()
                             cls.current_ips = []
 
                     if cls.scanned_ips > 0 and cls.last_scan > 250000:
-                        console.print(f"\n[bold yellow][!] Reinitializing ThreadPool!")
+                        console.print(f"\n[bold red][!] Reinitializing ThreadPool!")
                         cls.scan = False
                         time.sleep(5)
                         return False
@@ -563,10 +578,15 @@ class Mass_IP_Scanner():
                 console.print("[bold red][-] Killing ALL Threads...."); cls.scan=False
                 executor.shutdown(wait=False, cancel_futures=True)
 
-                with LOCK: File_Saver.push_ips_found(data=cls.current_ips, CONSOLE=console, verbose=True)
-                exit()
             except Exception as e: console.print(f"[bold red]Exception Error:[bold yellow] {e}"); cls.scan=False; exit()
 
+            
+            finally:
+
+                if cls.save: 
+                    with LOCK: File_Saver.push_ips_found(data=cls.current_ips, CONSOLE=console, verbose=True)
+                
+                exit()
 
 
 
@@ -582,7 +602,7 @@ class Mass_IP_Scanner():
 
         
         print("\n")
-        if cls.country: cls.blocks = Database.get_ip_block(country=cls.country, CONSOLE=console)
+        if cls.country: cls.blocks = Database.get_ip_block(country=cls.country, CONSOLE=console); cls.total_blocks = cls.blocks.copy()
         if cls.save:    File_Saver.push_ips_found(data=False, CONSOLE=console, save_name=cls.save_name  )
         if cls.asn:     data, cls.blocks = Database.get_asn(country=cls.country, asns=cls.asn)
 
@@ -592,7 +612,7 @@ class Mass_IP_Scanner():
             port = console.input("\n[bold yellow]Enter port to mass scan for!: ") or 80
             threads = console.input("[bold yellow]Enter Thread count!: ") or 250; print('\n')
         
-        
+        cls.time_start = time.time()
         panel = Panel(renderable="[bold red]Mass IP Scanner", border_style="bold purple", expand=False)
         with Live(panel, console=console, refresh_per_second=4):
             while True:
