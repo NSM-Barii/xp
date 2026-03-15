@@ -399,6 +399,8 @@ class Mass_IP_Scanner():
                             f"\n[{c1}]=================================",
                         )
 
+                        exit()
+
                     cls.scan = False; return False
 
 
