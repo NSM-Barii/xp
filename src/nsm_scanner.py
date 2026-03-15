@@ -359,6 +359,7 @@ class Mass_IP_Scanner():
     bf_all = None
     total_ips        = 0
     total_blocks     = []
+    leave            = False
 
 
 
@@ -399,9 +400,8 @@ class Mass_IP_Scanner():
                             f"\n[{c1}]=================================",
                         )
 
-                        sys.exit()
 
-                    cls.scan = False; return False
+                    cls.scan = False; cls.leave = True; return False
 
 
                 cls.current_block = cls.blocks.pop(0)
@@ -619,11 +619,11 @@ class Mass_IP_Scanner():
         cls.time_start = time.time()
         panel = Panel(renderable="[bold red]Mass IP Scanner", border_style="bold purple", expand=False)
         with Live(panel, console=console, refresh_per_second=4):
-            while True:
+            while not cls.leave:
                 cls.scan = True; cls.last_scan   = 0; time.sleep(5)
                 Mass_IP_Scanner._ip_threader(ports=port, max_workers=threads or 250, panel=panel)
 
-
+  
 
 if __name__ =="__main__":
     Mass_IP_Scanner._main()
